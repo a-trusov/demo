@@ -1,17 +1,10 @@
 package com.example.demo;
 
-import com.example.demo.dao.CountryDao;
-import com.example.demo.dao.CountryNotFoundException;
+import com.example.demo.dao.CountryRepository;
 import com.example.demo.model.Country;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
-import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,35 +12,42 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-
-
 @SpringBootTest
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DemoApplicationTests {
-
-    protected EmbeddedDatabase db;
-
     @Autowired
-    protected CountryDao countryDao;
+    private CountryRepository countryRepository;
 
-    private List<Country> expectedCountryList = new ArrayList<>();
-    private List<Country> expectedCountryListStartsWithA = new ArrayList<>();
-    private Country countryWithChangedName = new Country(1, "Russia", "RU");
+    private static final List<Country> EXPECTED_COUNTRY_LIST = new ArrayList<>();
+    private static final List<Country> EXPECTED_COUNTRY_LIST_STARTS_WITH_A = new ArrayList<>();
+    private static final Country COUNTRY_WITH_CHANGED_NAME = new Country(1, "Russia", "RU");
 
-    @BeforeAll
-    public void setUp()  {
-        db = (EmbeddedDatabase) countryDao.dataSource();
-        initExpectedCountryLists();
-        countryDao.loadCountries();
+    private static final String[][] COUNTRY_INIT_DATA = {
+            {"Australia", "AU"},
+            {"Canada", "CA"}, {"France", "FR"}, {"Hong Kong", "HK"},
+            {"Iceland", "IC"}, {"Japan", "JP"}, {"Nepal", "NP"},
+            {"Russian Federation", "RU"}, {"Sweden", "SE"},
+            {"Switzerland", "CH"}, {"United Kingdom", "GB"},
+            {"United States", "US"}
+    };
+
+    static {
+        for (int i = 0; i < COUNTRY_INIT_DATA.length; i++) {
+            String[] countryInitData = COUNTRY_INIT_DATA[i];
+            Country country = new Country(i, countryInitData[0], countryInitData[1]);
+            EXPECTED_COUNTRY_LIST.add(country);
+            if (country.getName().startsWith("A")) {
+                EXPECTED_COUNTRY_LIST_STARTS_WITH_A.add(country);
+            }
+        }
     }
 
     @Test
-    public void testCountryList() throws InterruptedException, CountryNotFoundException {
-        List<Country> countryList = countryDao.getCountryList();
+    public void testCountryList() throws InterruptedException {
+        List<Country> countryList = countryRepository.getCountryList();
         assertNotNull(countryList);
-        assertEquals(expectedCountryList.size(), countryList.size());
-        for (int i = 0; i < expectedCountryList.size(); i++) {
-            assertEquals(expectedCountryList.get(i), countryList.get(i));
+        assertEquals(EXPECTED_COUNTRY_LIST.size(), countryList.size());
+        for (int i = 0; i < EXPECTED_COUNTRY_LIST.size(); i++) {
+            assertEquals(EXPECTED_COUNTRY_LIST.get(i), countryList.get(i));
         }
 
 //        org.hsqldb.util.DatabaseManager.main(new String[]{});
@@ -56,28 +56,17 @@ class DemoApplicationTests {
 
     @Test
     public void testCountryListStartsWithA() {
-        List<Country> countryList = countryDao.getCountryListStartWith("A");
+        List<Country> countryList = countryRepository.getCountryListStartWith("A");
         assertNotNull(countryList);
-        assertEquals(expectedCountryListStartsWithA.size(), countryList.size());
-        for (int i = 0; i < expectedCountryListStartsWithA.size(); i++) {
-            assertEquals(expectedCountryListStartsWithA.get(i), countryList.get(i));
+        assertEquals(EXPECTED_COUNTRY_LIST_STARTS_WITH_A.size(), countryList.size());
+        for (int i = 0; i < EXPECTED_COUNTRY_LIST_STARTS_WITH_A.size(); i++) {
+            assertEquals(EXPECTED_COUNTRY_LIST_STARTS_WITH_A.get(i), countryList.get(i));
         }
     }
 
     @Test
-    public void testCountryChange()  {
-        countryDao.updateCountryName("RU", "Russia");
-        assertEquals(countryWithChangedName, countryDao.getCountryByCodeName("RU"));
-    }
-
-    private void initExpectedCountryLists() {
-        for (int i = 0; i < CountryDao.COUNTRY_INIT_DATA.length; i++) {
-            String[] countryInitData = CountryDao.COUNTRY_INIT_DATA[i];
-            Country country = new Country(i, countryInitData[0], countryInitData[1]);
-            expectedCountryList.add(country);
-            if (country.getName().startsWith("A")) {
-                expectedCountryListStartsWithA.add(country);
-            }
-        }
+    public void testCountryChange() {
+        countryRepository.updateCountryName("RU", "Russia");
+        assertEquals(COUNTRY_WITH_CHANGED_NAME, countryRepository.getCountryByCodeName("RU"));
     }
 }

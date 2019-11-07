@@ -3,6 +3,7 @@ package com.example.demo.model;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 
 import java.io.Serializable;
@@ -15,9 +16,7 @@ public class Country implements Serializable {
 
     @EqualsAndHashCode.Exclude
     private int id;
-
     private String name;
-
     private String codeName;
 
     public Country(int id, String name, String codeName) {
